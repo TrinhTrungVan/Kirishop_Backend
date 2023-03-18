@@ -25,7 +25,7 @@ class APIFeatures {
 
     sorting() {
         const { sort } = this.queryString;
-        if (sort) {
+        if (sort !== "") {
             if (sort === "oldest") this.query = this.query.sort("createdAt");
             if (sort === "high-low") this.query = this.query.sort("-price");
             if (sort === "low-high") this.query = this.query.sort("price");
