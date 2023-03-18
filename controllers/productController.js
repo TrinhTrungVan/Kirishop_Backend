@@ -1,37 +1,98 @@
-// import Todo from "../models/todoModel.js";
-// import TodoList from "../models/todoListModel.js";
-
+import auth from "../middleware/auth.js";
 import Product from "../models/productModel.js";
+class APIFeatures {
+    query;
+    queryString;
+
+    constructor(query, queryString) {
+        this.query = query;
+        this.queryString = queryString;
+    }
+
+    filtering() {
+        const { category, search } = this.queryString;
+        if (category && category !== "all") {
+            this.query = this.query.find({ category: this.queryString.category });
+        }
+        if (search && search !== "all") {
+            this.query = this.query.find({
+                title: { $regex: this.queryString.search, $options: "i" },
+            });
+        }
+
+        return this;
+    }
+
+    sorting() {
+        const { sort } = this.queryString;
+        if (sort) {
+            if (sort === "oldest") this.query = this.query.sort("createdAt");
+            if (sort === "high-low") this.query = this.query.sort("-price");
+            if (sort === "low-high") this.query = this.query.sort("price");
+        }
+
+        return this;
+    }
+}
 
 export const getProducts = async (req, res) => {
-    const products = await Product.find({});
-    console.log("Create Success!");
-    res.json(products);
+    try {
+        const features = new APIFeatures(Product.find().sort("-createdAt"), req.query)
+            .filtering()
+            .sorting();
+
+        const result = await features.query;
+
+        res.status(200).json({
+            result: result.length,
+            products: result,
+        });
+    } catch (e) {
+        res.status(500).json({ error: "An error occurred!", message: e.message });
+    }
 };
 
 export const createProduct = async (req, res) => {
     try {
-        const data = req.body;
-        console.log(data);
-        const newProduct = new Product(data);
+        const result = await auth(req, res);
+        if (!result.isAdmin) return res.status(400).json({ error: "Authentication is not valid." });
+
+        const { title, description, category, images, price, inStock } = req.body;
+        if (!title || !description || !category)
+            return res.status(400).json({ error: "Please complete all fields!" });
+        const newProduct = new Product({ title, description, category, images, price, inStock });
         await newProduct.save();
-        res.json({ message: "Create Success!" });
+        res.status(200).json(newProduct);
     } catch (e) {
-        res.json({ error: "An error occurred!" });
+        res.status(500).json({ error: "An error occurred!", message: e.message });
     }
 };
 
-// export const deleteTodo = async (req, res) => {
-//     const id = req.params.id;
-//     const listId = req.query.listId;
-//     await TodoList.findOneAndUpdate({ _id: listId }, { $pull: { data: id } });
+export const updateProduct = async (req, res) => {
+    try {
+        const result = await auth(req, res);
+        if (!result.isAdmin) return res.status(400).json({ error: "Authentication is not valid." });
 
-//     const deleteItem = await Todo.findById(id);
-//     await deleteItem.remove().then(() => res.send(JSON.stringify(deleteItem)));
-// };
+        const { id } = req.params;
+        const data = req.body;
+        await Product.findByIdAndUpdate(id, data);
 
-// export const updateTodo = async (req, res) => {
-//     const id = req.params.id;
-//     const updateItem = new Todo(req.body);
-//     await Todo.findByIdAndUpdate(id, updateItem).then(() => res.send(JSON.stringify(updateItem)));
-// };
+        res.status(200).json({ message: "Update Success!" });
+    } catch (error) {
+        res.status(500).json({ error: "An error occurred!", message: e.message });
+    }
+};
+
+export const deleteProduct = async (req, res) => {
+    try {
+        const result = await auth(req, res);
+        if (!result.isAdmin) return res.status(400).json({ error: "Authentication is not valid." });
+
+        const { id } = req.params;
+        await Product.findByIdAndDelete(id);
+
+        res.status(200).json({ message: "Delete Success!" });
+    } catch (error) {
+        res.status(500).json({ error: "An error occurred!", message: e.message });
+    }
+};

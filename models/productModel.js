@@ -1,5 +1,5 @@
-import mongoose, { Schema } from "mongoose";
-// import Category from './categoryModel'
+import mongoose from "mongoose";
+import Category from "./categoryModel.js";
 
 const ProductSchema = new mongoose.Schema(
     {
@@ -21,7 +21,7 @@ const ProductSchema = new mongoose.Schema(
         },
         category: {
             type: String,
-            // ref: Category,
+            ref: Category,
             require: true,
         },
         checked: {
