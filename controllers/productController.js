@@ -29,17 +29,16 @@ class APIFeatures {
             if (sort === "oldest") this.query = this.query.sort("createdAt");
             if (sort === "high-low") this.query = this.query.sort("-price");
             if (sort === "low-high") this.query = this.query.sort("price");
-        }
+        } else this.query = this.query.sort("-createdAt");
 
         return this;
     }
 }
 
 export const getProducts = async (req, res) => {
+    console.log(req.query);
     try {
-        const features = new APIFeatures(Product.find().sort("-createdAt"), req.query)
-            .filtering()
-            .sorting();
+        const features = new APIFeatures(Product.find(), req.query).filtering().sorting();
 
         const result = await features.query;
 
