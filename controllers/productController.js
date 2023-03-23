@@ -50,6 +50,19 @@ export const getProducts = async (req, res) => {
     }
 };
 
+export const getProductDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const productDetails = await Product.findById(id);
+
+        console.log(productDetails);
+
+        res.status(200).json(productDetails);
+    } catch (e) {
+        res.status(500).json({ error: "An error occurred!", message: e.message });
+    }
+};
+
 export const createProduct = async (req, res) => {
     try {
         const result = await auth(req, res);
